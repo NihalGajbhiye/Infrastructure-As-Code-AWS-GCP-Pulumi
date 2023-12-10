@@ -1,0 +1,7 @@
+config:
+  aws:profile: DEV
+  iac-pulumi:cidrBase: 10.0.1.0/24
+  iac-pulumi:pulumi-stack-name: dev
+  iac-pulumi:subnetCount: "3"
+  iac-pulumi:vpcCIDRBlock: 10.0.0.0/16
+  iac-pulumi:vpcName: myDevVPC
