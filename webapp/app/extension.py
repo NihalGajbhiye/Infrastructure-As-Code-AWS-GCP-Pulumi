@@ -1,12 +1,34 @@
-import logging, os, sys
+import logging, os, sys, json
+from config import Config
 from logging.handlers import RotatingFileHandler
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from statsd import StatsClient
+import boto3
 
+# Retrieve SNS Topic ARN from environment variable
+sns_topic_arn = Config.SNS_TOPIC_ARN
+AWS_profile_name = Config.AWS_PROFILE_NAME
+
+# Create an SNS client
+session = boto3.Session()
+sns_client = session.client("sns", region_name="us-east-1")
 
 db = SQLAlchemy()
 bcrpyt = Bcrypt()
+
+# Function to publish messsage to SNS
+def publish_to_sns(submission_url, user_email, assigment_id, assignment_name, submission_attempt):
+    """Publishes a message to SNS topic with submission URL and user email"""
+    sns_client.publish(
+        TopicArn = sns_topic_arn,
+        Message=json.dumps({
+            "submission_url": submission_url,
+            "email": user_email,
+            'Path': f"{user_email}/{assigment_id}/{assignment_name}/{submission_attempt + 1}"
+        })
+    )
+
 
 
 def setup_logging(level = logging.INFO):

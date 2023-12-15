@@ -46,8 +46,23 @@ class Assignment(db.Model):
                 'assignment_created': self.assignment_created.isoformat(),
                 'assignment_updated': self.assignment_updated.isoformat() if self.assignment_created else None
             }
+        
+class Submission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.String, db.ForeignKey('assignment.id'), nullable=False)
+    submission_url = db.Column(db.String(200), nullable=False)
+    Submission_date = db.Column(db.DateTime, default=datetime.utcnow)
+    assignment_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-
+    def serialize(self):
+         """Return object data in easily serializable format"""
+         return {
+              'id' : self.id,
+              "assignment_id": self.assignment_id,
+              "submission_url": self.submission_url,
+              "submission_date": self.submission_date.isoformat(),
+              "assigment_updated": self.assignment_updated.isoformat() if self.assignment_updated else None
+         }
 
     
 

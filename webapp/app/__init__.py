@@ -1,14 +1,13 @@
 from flask import Flask, request, abort
 from config import Config
-from app.extension import db
 from flask_migrate import Migrate
-from app.extension import logger, statsd
+from app.extension import logger, statsd, db, bcrpyt, publish_to_sns
 from sqlalchemy import text
 from uuid import uuid4
 from app.helper_func import create_response
 from sqlalchemy.exc import SQLAlchemyError
 from functools import wraps
-from app.models import User, Assignment
+from app.models import User, Assignment, Submission
 from datetime import datetime
 from app.helper_func import (
     is_valid_email, 
@@ -27,6 +26,7 @@ def create_app(config_class=Config):
 
 
     db.init_app(app)
+    bcrpyt.init_app(app)
 
     Migrate(app, db)
 
@@ -214,10 +214,63 @@ def create_app(config_class=Config):
         if assignment.created_by != user_id:
             abort(403, description="Forbidden: you do not have permission to delete assignment")
         
+        # Delete all related Submissions first
+        Submission.query.filter_by(assignment_id=ass_id).delete()
+
         db.session.delete(assignment)
         db.session.commit()
 
         logger.info("Assignment Deleted Successfully")
         return create_response(204)
+
+    # Submission API
+
+    @app.route("/v1/assigments/<string:ass_id>/submission", methods=['POST'])
+    @basic_auth_required
+    def create_submission(ass_id):
+        statsd.incr(".submission.create")
+        data = request.get_json()
+        if not data:
+            abort(400, description= "Request body must be present")
+        
+        assignment = Assignment.query.get_or_404(ass_id)
+        submission_url = data.get("submission_url")
+
+        if not submission_url:
+            abort(400, description="Missing required fileds")
+
+        if assignment.deadline <= datetime.utcnow():
+            abort(400, description="Deadline has passed for this assignment")
+        
+        previous_submissions = Submission.query.filter_by(assignment_id=ass_id).all()
+
+        attempts_left = assignment.num_of_attempts - len(previous_submissions)
+
+        if attempts_left <= 0:
+            abort(400, description="No attempts left for this assignment")
+
+        submission_date =(
+            previous_submissions[-1].submission_date
+            if previous_submissions
+            else datetime.utcnow()
+        )
+
+        submission = Submission(
+            assignment_id = ass_id,
+            submission_url = submission_url,
+            submission_date = submission_date,
+            assignment_updated =datetime.utcnow()
+        )
+
+        db.session.add(submission)
+        db.session.commit()
+
+        logger.info("Submission created successfully.")
+
+        username = get_email_from_basic_auth()
+        publish_to_sns(submission_url, username, ass_id, assignment.name, len(previous_submissions))
+        logger.info("SNS message published successfully.")
+
+        return create_response(201, submission.serialize())
 
     return app

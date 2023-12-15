@@ -1,0 +1,11 @@
+config:
+  iac-pulumi:accountId: "576324331796"
+  iac-pulumi:applicationPort: "8000"
+  iac-pulumi:cidrBase: "10.0"
+  iac-pulumi:domainName: applenihal.me
+  iac-pulumi:gcp_project: DEV-PROJECT
+  iac-pulumi:hostedZoneId: Z00751481YMG8TGM60RRV
+  iac-pulumi:profile: DEV
+  iac-pulumi:subnetCount: "3"
+  iac-pulumi:vpcCIDRBlock: 10.0.0.0/16
+  iac-pulumi:vpcName: my-vpc
