@@ -1,6 +1,6 @@
 packer{
     required_plugins {
-        amazon {
+        amazon = {
             version= ">=1.0.8"
             source = "github.com/hashicorp/amazon"
         }
@@ -71,26 +71,28 @@ source "amazon-ebs" "debian" {
         Name = "debian_ami_12"
         Environment = "DEV"
     }
+
+    aws_polling {
+        delay_seconds = 60
+        max_attempts = 10
+    }
+
+
+    source_ami = var.source_ami
+    ami_users = var.ami_users
+    ssh_username = var.ssh_username
+
+    access_key = var.aws_access_key
+    secret_key = var.aws_secret_key
+
+    launch_block_device_mappings {
+        delete_on_termination = true
+        device_name = "/dev/sdf"
+        volume_size = 25
+        volume_type = "gp2"
+    }
 }
 
-aws_polling {
-    delay_seconds = 60
-    max_attempts = 10
-}
-
-source = var.source_ami
-ami_users = var.ami_users
-ssh_username = var.ssh_username
-
-access_key = var.aws_access_key
-secret_key = var.aws_secret_key
-
-lauch_block_device_mappings {
-    delete_on_termination = true
-    device_name = "/dev/sdf"
-    volume_size = 25
-    volume_type = "gp2"
-}
 
 build {
     name = "custom-ami"
@@ -113,7 +115,7 @@ build {
 
     provisioner "file" {
         source = "./webapp.zip"
-        destination = "./tmp/webapp.zip"
+        destination = "/tmp/webapp.zip"
     }
 
     # Configuring like basiclaly virtuall env
@@ -147,7 +149,7 @@ build {
             "After=network.target",
             "",
             "[Service]",
-            "User=wapp_user",eb
+            "User=webapp_user",
             "Group=www-data",
             "WorkingDirectory=${var.app_dir}",
             "Environment=PATH=${var.app_dir}/env/bin",
