@@ -78,6 +78,81 @@ This README provides detailed information about the infrastructure components us
 10. **DNS Configuration**:
     - Route53 DNS records are set up to point to the load balancer for domain resolution. This allows users to access the application using a custom domain name.
 
+## Prerequisites
+
+Before getting started, ensure you have the following prerequisites installed and configured:
+
+- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
+- AWS CLI configured with appropriate credentials
+- GCP credentials and project ID
+- Python (if using Python-based Pulumi code)
+- Node.js (if using TypeScript-based Pulumi code)
+
+## Getting Started
+
+To deploy the infrastructure, follow these steps:
+
+1. Clone this repository to your local machine:
+
+    ```bash
+    git clone <repository-url>
+    ```
+
+2. Navigate to the project directory:
+
+    ```bash
+    cd iac-pulumi
+    ```
+
+3. Install dependencies (if required):
+
+    ```bash
+    pip install -r requirements.txt    # For Python-based projects
+    ```
+
+4. Configure Pulumi to authenticate with your AWS and GCP accounts(you must have AWS and GCP account):
+
+    ```bash
+    pulumi config set aws:region us-west-2
+   pulumi config set gcp:project dev-project-408123
+   pulumi config set iac-pulumi:KeyPairName MyKeyPair
+   pulumi config set iac-pulumi:applicationPort 8000
+   pulumi config set iac-pulumi:cidrBase 172.31.0.0/20
+   pulumi config set iac-pulumi:domainName example.com
+   pulumi config set iac-pulumi:hostedZoneId Z00751481YMG8TGM60RRV
+   pulumi config set iac-pulumi:profile DEV
+   pulumi config set iac-pulumi:sesDomain example@gmail.com
+   pulumi config set iac-pulumi:subnetCount 3
+   pulumi config set iac-pulumi:vpcCIDRBlock 172.31.0.0/20
+   pulumi config set iac-pulumi:vpcName my-vpc
+
+    ```
+
+5. Preview the changes to be applied:
+
+    ```bash
+    pulumi preview
+    ```
+
+6. If the preview looks good, deploy the infrastructure:
+
+    ```bash
+    pulumi up
+    ```
+
+7. Follow the prompts to confirm the deployment. Enter `yes` to proceed.
+
+8. Monitor the deployment process as Pulumi creates and configures the resources on AWS and GCP.
+
+## Additional Information
+
+- The `pulumi.yaml` file contains project metadata and settings.
+- The `Pulumi.dev.yaml` file stores configuration specific to your development environment.
+- Review the Pulumi documentation for detailed information on working with Pulumi projects and managing infrastructure.
+
+## Support
+
+For any questions or issues related to this repository, please [open an issue](<repository-issues-url>) or contact [maintainer-name](<maintainer-email>).
 ## Conclusion
 
 The Pulumi script orchestrates the deployment of a comprehensive infrastructure stack consisting of AWS and GCP resources. Each component is integrated to ensure seamless communication and operation within the infrastructure environment, providing a scalable, resilient, and secure platform for hosting applications.
