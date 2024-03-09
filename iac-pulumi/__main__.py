@@ -16,7 +16,7 @@ vpc_cidr_block = config.require("vpcCIDRBlock")
 subnet_count = int(config.get("subnetCount") or 2)
 cidr_base = config.require("cidrBase")
 aws_profile_name = config.require("profile")
-# key_pair_name = config.require("KeyPairName")
+key_pair_name = config.require("KeyPairName")
 gcp_project = config.require("gcp_project")
 
 # configuration in yout pulumi config
@@ -202,7 +202,7 @@ lambdarole = aws.iam.Role(
             "Statement": [
                 {
                     "Action":"sts:AssumeRole",
-                    "Principal": {"Service": "lamda.amazonaws.com"},
+                    "Principal": {"Service": "lambda.amazonaws.com"},
                     "Effect": "Allow"
                 }
             ]
@@ -234,7 +234,7 @@ policy = aws.iam.RolePolicy(
 
 
 # Path to the Lamda Fucntion code
-artifact_path = os.Path.join(
+artifact_path = os.path.join(
     "/Users/nihalgajbhiye/Desktop/Cloud Class/CloudRepo/Cloud/",
     "serverless.zip"
 )
@@ -248,7 +248,7 @@ decoded_key = account_key.private_key.apply(
 func = lambda_.Function(
     "myLambdaFunction",
     role=lambdarole.arn,
-    runtime="pyhton3.8",
+    runtime="python3.8",
     handler="lambda_function.lambda_handler",
     code=pulumi.FileArchive(artifact_path),
     environment={
@@ -266,7 +266,7 @@ func = lambda_.Function(
 
 
 sns_topic_subscription = aws.sns.TopicSubscription(
-    "MySNSTopicSubscription", topic=sns_topic.arn, protocol="lamda", endpoint=func.arn
+    "MySNSTopicSubscription", topic=sns_topic.arn, protocol="lambda", endpoint=func.arn
 )
 
 # IAM Policy attachment for lambda invocation from SNS
@@ -319,7 +319,7 @@ app_sg = ec2.SecurityGroup(
     "app-sg",
     vpc_id=vpc.id,
     description="Application Security Groups",
-    opts=pulumi.ResourceOptions(depends_on=[vpc_cidr_block]),
+    opts=pulumi.ResourceOptions(depends_on=[vpc, *public_subnets]),
     ingress=agg_sg_ingress,
     egress=[  # Explicitly allowing all outbound traffic, including to the RDS on port 5432
         {"protocol": "-1", "from_port": 0, "to_port": 0, "cidr_blocks": ["0.0.0.0/0"]} 
@@ -346,7 +346,7 @@ parameter_group = rds.ParameterGroup(
     description = "Custom paramter group for my PostgreSQL database",
     parameters=[
         {"name": "client_min_messages", "value": "notice"},
-        {"name": "default_transaction_isolation", "value": "read_committed"},
+        {"name": "default_transaction_isolation", "value": "read committed"},
         {"name": "lc_messages", "value": "en_US.UTF-8"}
     ]
 )
@@ -492,8 +492,8 @@ launch_template = ec2.LaunchTemplate(
     name_prefix="lt-",
     image_id = pulumi.Output.from_input(ami).apply(lambda ami:ami.id),
     instance_type="t2.micro",
-    # key_name=key_pair_name,
-    user_data=encode_user_data,
+    key_name=key_pair_name,
+    user_data=encoded_user_data,
     iam_instance_profile={
         "arn": instance_profile.arn
     },
@@ -520,7 +520,7 @@ alb = aws.lb.LoadBalancer(
     "app-lb",
     internal=False,
     load_balancer_type="application",
-    security_groups=[lg_sg.id],
+    security_groups=[lb_sg.id],
     subnets=[subnet.id for subnet in public_subnets],
     enable_deletion_protection=False,
     tags={"Name": "app-lb"},

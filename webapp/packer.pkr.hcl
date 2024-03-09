@@ -118,29 +118,38 @@ build {
         destination = "/tmp/webapp.zip"
     }
 
-    # Configuring like basiclaly virtuall env
+    // provisioner "remote-exec" {
+    // inline = ["ls -ld ${var.app_dir}"]
+    // }
+    // provisioner "file" {
+    //     source      = "./requirements.txt"  # Adjust the path accordingly
+    //     destination = "${var.app_dir}/requirements.txt"
+    // }
+
+    # Configuring basiclally virtual env with user, permissions, pip install...
 
     provisioner "shell" {
-        inline = [
-            "sudo su -<<EOF",
-            "adduser --disabled-password --gecos \"\" webapp_user",
-            "mkdir -p ${var.app_dir}",
-            "unzip /tmp/webapp.zip -d ${var.app_dir}",
-            "chown -R webapp_user:webapp_user ${var.app_dir}",
-            "cd ${var.app_dir}",
-            "apt update && apt install python3.11-venv libpq-dev -y",
-            "apt-get install cloud-init -y",
-            "systemctl enable cloud-init",
-            "python3.11 -m venv env",
-            "source ${var.app_dir}/env/bin/activate",
-            "env/bin/pip install --upgrade pip",
-            "env/bin/pip install -r requirements.txt",
-            "EOF"
-        ]
-    }
+    inline = [
+        "sudo su - <<EOF",
+        "adduser --disabled-password --gecos \"\" webapp_user",
+        "mkdir -p ${var.app_dir}",
+        "unzip /tmp/webapp.zip -d ${var.app_dir}",
+        "chown -R webapp_user:webapp_user ${var.app_dir}",
+        "cd ${var.app_dir}",
+        "apt update && apt install python3.11-venv libpq-dev -y",
+        "apt-get install cloud-init -y",
+        "systemctl enable cloud-init",
+        "python3.11 -m venv env",
+        "source ${var.app_dir}/env/bin/activate",
+        "[ -e requirements.txt ] || echo -e 'alembic==1.12.0\nbcrypt==4.0.1\nblinker==1.6.2\nclick==8.1.7\ncolorama==0.4.6\nexceptiongroup==1.1.3\nFlask==2.3.3\nFlask-Bcrypt==1.0.1\nFlask-Migrate==4.0.5\nFlask-SQLAlchemy==3.1.1\ngunicorn==21.2.0\niniconfig==2.0.0\nitsdangerous==2.1.2\nJinja2==3.1.2\nMako==1.2.4\nMarkupSafe==2.1.3\npackaging==23.2\npluggy==1.3.0\npsycopg2==2.9.7\npsycopg2-binary==2.9.9\nPyJWT==2.8.0\npytest==7.4.2\npython-dotenv==1.0.0\nSQLAlchemy==2.0.21\nstatsd==4.0.1\ntomli==2.0.1\ntyping_extensions==4.8.0\nWerkzeug==2.3.7\nboto3==1.29.6' > requirements.txt",
+        "env/bin/pip install --upgrade pip",
+        "env/bin/pip install -r requirements.txt",
+        "EOF",
+    ]
+}
 
     # Configuring Guncoirn backend in linux for flask web app as service
-
+    
     provisioner "shell" {
         inline = [
             "sudo bash -c \"cat > /etc/systemd/system/app.service << EOF",
